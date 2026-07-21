@@ -9,7 +9,7 @@ import android.os.Process
 import android.provider.Settings
 import android.view.View
 import android.widget.Button
-import android.widget.LinearLayout
+import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -17,25 +17,23 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var btnGrant: Button
+    private lateinit var btnCircleStart: RelativeLayout
+    private lateinit var tvCircleText: TextView
+    private lateinit var tvCustomTime: TextView
+    private lateinit var statusDesc: TextView
+
+    private lateinit var btnMinus5: Button
+    private lateinit var btnPlus5: Button
     private lateinit var btnSelectApps: Button
     private lateinit var btnUsageAnalytics: Button
-    private lateinit var statusTitle: TextView
-    private lateinit var statusDesc: TextView
-    private lateinit var timerControls: LinearLayout
-    private lateinit var tvCountdown: TextView
 
-    private lateinit var btn15m: Button
-    private lateinit var btn25m: Button
-    private lateinit var btn45m: Button
-
-    private var selectedMinutes = 25
+    private var customMinutes = 25
     private var isSessionActive = false
 
     private val timerReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val timeRemaining = intent?.getStringExtra("TIME_LEFT") ?: return
-            tvCountdown.text = timeRemaining
+            tvCustomTime.text = timeRemaining
         }
     }
 
@@ -43,21 +41,29 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        btnGrant = findViewById(R.id.btn_grant_permissions)
+        btnCircleStart = findViewById(R.id.btn_circle_start)
+        tvCircleText = findViewById(R.id.tv_circle_button_text)
+        tvCustomTime = findViewById(R.id.tv_custom_time)
+        statusDesc = findViewById(R.id.status_desc)
+
+        btnMinus5 = findViewById(R.id.btn_minus_5)
+        btnPlus5 = findViewById(R.id.btn_plus_5)
         btnSelectApps = findViewById(R.id.btn_select_apps)
         btnUsageAnalytics = findViewById(R.id.btn_usage_analytics)
-        statusTitle = findViewById(R.id.status_title)
-        statusDesc = findViewById(R.id.status_desc)
-        timerControls = findViewById(R.id.timer_controls)
-        tvCountdown = findViewById(R.id.tv_countdown)
 
-        btn15m = findViewById(R.id.btn_15m)
-        btn25m = findViewById(R.id.btn_25m)
-        btn45m = findViewById(R.id.btn_45m)
+        btnMinus5.setOnClickListener {
+            if (customMinutes > 5) {
+                customMinutes -= 5
+                updateTimerDisplay()
+            }
+        }
 
-        btn15m.setOnClickListener { selectDuration(15) }
-        btn25m.setOnClickListener { selectDuration(25) }
-        btn45m.setOnClickListener { selectDuration(45) }
+        btnPlus5.setOnClickListener {
+            if (customMinutes < 300) {
+                customMinutes += 5
+                updateTimerDisplay()
+            }
+        }
 
         btnSelectApps.setOnClickListener {
             startActivity(Intent(this, SelectAppsActivity::class.java))
@@ -67,7 +73,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, UsageStatsActivity::class.java))
         }
 
-        btnGrant.setOnClickListener { handleButtonClick() }
+        btnCircleStart.setOnClickListener { handleCircleButtonClick() }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(timerReceiver, IntentFilter("FOCUS_TIMER_UPDATE"), RECEIVER_NOT_EXPORTED)
@@ -83,10 +89,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun selectDuration(mins: Int) {
-        selectedMinutes = mins
-        tvCountdown.text = String.format("%02d:00", mins)
-        Toast.makeText(this, "Set to $mins minutes", Toast.LENGTH_SHORT).show()
+    private fun updateTimerDisplay() {
+        tvCustomTime.text = String.format("%02d:00", customMinutes)
     }
 
     private fun hasAllPermissions(): Boolean {
@@ -108,7 +112,7 @@ class MainActivity : AppCompatActivity() {
         return mode == AppOpsManager.MODE_ALLOWED
     }
 
-    private fun handleButtonClick() {
+    private fun handleCircleButtonClick() {
         if (!hasAllPermissions()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
                 startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
@@ -131,22 +135,21 @@ class MainActivity : AppCompatActivity() {
         val blockedApps = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
 
         if (blockedApps.isEmpty()) {
-            Toast.makeText(this, "Please select at least 1 app to block first!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Select at least 1 app in 'Blocked Apps' first!", Toast.LENGTH_LONG).show()
             startActivity(Intent(this, SelectAppsActivity::class.java))
             return
         }
 
         isSessionActive = true
-        statusTitle.text = "Focus Session Running 🎯"
-        statusDesc.text = "Stay focused! ${blockedApps.size} apps are locked."
-        btnGrant.text = "End Focus Session"
-        btnSelectApps.visibility = View.GONE
-        btnUsageAnalytics.visibility = View.GONE
-        timerControls.visibility = View.GONE
-        tvCountdown.visibility = View.VISIBLE
+        statusDesc.text = "Session active • ${blockedApps.size} apps locked"
+        tvCircleText.text = "STOP\nSESSION"
+        btnCircleStart.setBackgroundResource(R.drawable.bg_circle_button_active)
+
+        btnMinus5.visibility = View.INVISIBLE
+        btnPlus5.visibility = View.INVISIBLE
 
         val serviceIntent = Intent(this, FocusService::class.java)
-        serviceIntent.putExtra("DURATION_MINUTES", selectedMinutes)
+        serviceIntent.putExtra("DURATION_MINUTES", customMinutes)
         ContextCompat.startForegroundService(this, serviceIntent)
     }
 
@@ -157,14 +160,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showReadyState() {
-        statusTitle.text = "Focus Builder Active 🚀"
-        statusDesc.text = "Select apps and duration to start focusing:"
-        btnGrant.text = "Start Focus Session"
-        btnSelectApps.visibility = View.VISIBLE
-        btnUsageAnalytics.visibility = View.VISIBLE
-        timerControls.visibility = View.VISIBLE
-        tvCountdown.visibility = View.VISIBLE
-        tvCountdown.text = String.format("%02d:00", selectedMinutes)
+        statusDesc.text = "Ready to lock down distractions"
+        tvCircleText.text = "START\nFOCUS"
+        btnCircleStart.setBackgroundResource(R.drawable.bg_circle_button)
+
+        btnMinus5.visibility = View.VISIBLE
+        btnPlus5.visibility = View.VISIBLE
+        updateTimerDisplay()
     }
 
     override fun onDestroy() {
