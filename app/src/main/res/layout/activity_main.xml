@@ -5,6 +5,43 @@
     android:background="@drawable/bg_main"
     android:padding="20dp">
 
+    <!-- Ambient Background Doodles -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:alpha="0.08"
+        android:text="🧠"
+        android:textSize="70sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:alpha="0.08"
+        android:text="🎯"
+        android:textSize="80sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_alignParentStart="true"
+        android:alpha="0.08"
+        android:text="⚡"
+        android:textSize="60sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true"
+        android:alpha="0.08"
+        android:text="🔒"
+        android:textSize="75sp" />
+
     <!-- Header Section -->
     <LinearLayout
         android:id="@+id/header_layout"
@@ -33,7 +70,7 @@
             android:textSize="14sp" />
     </LinearLayout>
 
-    <!-- Center Interactive Area: Timer & Start Circle Button -->
+    <!-- Center Interactive Timer & Start Circle Button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -104,7 +141,7 @@
 
     </LinearLayout>
 
-    <!-- Modern Bottom Navigation Bar -->
+    <!-- Persistent 4-Tab Bottom Navigation Bar -->
     <LinearLayout
         android:id="@+id/bottom_navigation_bar"
         android:layout_width="match_parent"
@@ -113,10 +150,10 @@
         android:background="@drawable/bg_card"
         android:gravity="center"
         android:orientation="horizontal"
-        android:paddingHorizontal="8dp"
-        android:weightSum="3">
+        android:paddingHorizontal="4dp"
+        android:weightSum="4">
 
-        <!-- Field 1: Focus Tab (Active Default) -->
+        <!-- Tab 1: Focus -->
         <LinearLayout
             android:id="@+id/nav_tab_focus"
             android:layout_width="0dp"
@@ -125,8 +162,7 @@
             android:background="@drawable/bg_nav_tab_active"
             android:clickable="true"
             android:focusable="true"
-            android:gravity="center"
-            android:orientation="vertical">
+            android:gravity="center">
 
             <TextView
                 android:id="@+id/tv_nav_focus"
@@ -134,11 +170,11 @@
                 android:layout_height="wrap_content"
                 android:text="⏱️ Focus"
                 android:textColor="#8B5CF6"
-                android:textSize="14sp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Field 2: Blocked Apps Tab -->
+        <!-- Tab 2: Apps -->
         <LinearLayout
             android:id="@+id/nav_tab_apps"
             android:layout_width="0dp"
@@ -146,8 +182,7 @@
             android:layout_weight="1"
             android:clickable="true"
             android:focusable="true"
-            android:gravity="center"
-            android:orientation="vertical">
+            android:gravity="center">
 
             <TextView
                 android:id="@+id/tv_nav_apps"
@@ -155,11 +190,11 @@
                 android:layout_height="wrap_content"
                 android:text="📱 Apps"
                 android:textColor="#94A3B8"
-                android:textSize="14sp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Field 3: Analytics Tab -->
+        <!-- Tab 3: Stats -->
         <LinearLayout
             android:id="@+id/nav_tab_stats"
             android:layout_width="0dp"
@@ -167,8 +202,7 @@
             android:layout_weight="1"
             android:clickable="true"
             android:focusable="true"
-            android:gravity="center"
-            android:orientation="vertical">
+            android:gravity="center">
 
             <TextView
                 android:id="@+id/tv_nav_stats"
@@ -176,7 +210,27 @@
                 android:layout_height="wrap_content"
                 android:text="📊 Stats"
                 android:textColor="#94A3B8"
-                android:textSize="14sp"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Tab 4: About -->
+        <LinearLayout
+            android:id="@+id/nav_tab_about"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tv_nav_about"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ℹ️ About"
+                android:textColor="#94A3B8"
+                android:textSize="12sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
