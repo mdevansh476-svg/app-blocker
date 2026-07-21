@@ -2,16 +2,18 @@ package com.example.focusblocker
 
 import android.app.usage.UsageStatsManager
 import android.content.Context
+import android.graphics.drawable.Drawable
 import java.util.Calendar
 
 data class AppUsageData(
     val appName: String,
     val packageName: String,
+    val appIcon: Drawable?,
     val todayMillis: Long,
     val yesterdayMillis: Long,
     val weeklyTotalMillis: Long,
     val dailyAvgMillis: Long,
-    var dailyLimitMinutes: Int // 0 means no limit set
+    var dailyLimitMinutes: Int
 )
 
 class UsageStatsHelper(private val context: Context) {
@@ -27,15 +29,19 @@ class UsageStatsHelper(private val context: Context) {
         val prefs = context.getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
         val limit = prefs.getInt("limit_$packageName", 0)
 
-        val appName = try {
+        var appName = packageName
+        var icon: Drawable? = null
+
+        try {
             val pm = context.packageManager
             val info = pm.getApplicationInfo(packageName, 0)
-            pm.getApplicationLabel(info).toString()
+            appName = pm.getApplicationLabel(info).toString()
+            icon = pm.getApplicationIcon(info)
         } catch (e: Exception) {
-            packageName
+            // Ignored
         }
 
-        return AppUsageData(appName, packageName, today, yesterday, weeklyTotal, dailyAvg, limit)
+        return AppUsageData(appName, packageName, icon, today, yesterday, weeklyTotal, dailyAvg, limit)
     }
 
     fun getTodayUsageMillis(packageName: String): Long {
