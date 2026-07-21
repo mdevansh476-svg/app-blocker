@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissions for usage access, overlay, foreground service & notifications -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -15,6 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
+        <!-- Main Screen -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -24,11 +26,17 @@
             </intent-filter>
         </activity>
 
-        <!-- New App Selector Screen -->
+        <!-- App Selector Activity -->
         <activity
             android:name=".SelectAppsActivity"
             android:exported="false" />
 
+        <!-- Analytics & Limits Activity -->
+        <activity
+            android:name=".UsageStatsActivity"
+            android:exported="false" />
+
+        <!-- Background Blocker Service -->
         <service
             android:name=".FocusService"
             android:enabled="true"
