@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 class MainActivity : AppCompatActivity() {
 
     private lateinit var btnGrant: Button
+    private lateinit var btnSelectApps: Button
     private lateinit var statusTitle: TextView
     private lateinit var statusDesc: TextView
     private lateinit var timerControls: LinearLayout
@@ -42,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         btnGrant = findViewById(R.id.btn_grant_permissions)
+        btnSelectApps = findViewById(R.id.btn_select_apps)
         statusTitle = findViewById(R.id.status_title)
         statusDesc = findViewById(R.id.status_desc)
         timerControls = findViewById(R.id.timer_controls)
@@ -54,6 +56,10 @@ class MainActivity : AppCompatActivity() {
         btn15m.setOnClickListener { selectDuration(15) }
         btn25m.setOnClickListener { selectDuration(25) }
         btn45m.setOnClickListener { selectDuration(45) }
+
+        btnSelectApps.setOnClickListener {
+            startActivity(Intent(this, SelectAppsActivity::class.java))
+        }
 
         btnGrant.setOnClickListener { handleButtonClick() }
 
@@ -115,10 +121,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startFocusSession() {
+        val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
+        val blockedApps = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
+
+        if (blockedApps.isEmpty()) {
+            Toast.makeText(this, "Please select at least 1 app to block first!", Toast.LENGTH_LONG).show()
+            startActivity(Intent(this, SelectAppsActivity::class.java))
+            return
+        }
+
         isSessionActive = true
         statusTitle.text = "Focus Session Running 🎯"
-        statusDesc.text = "Stay focused! Distractions are locked."
+        statusDesc.text = "Stay focused! ${blockedApps.size} apps are locked."
         btnGrant.text = "End Focus Session"
+        btnSelectApps.visibility = View.GONE
         timerControls.visibility = View.GONE
         tvCountdown.visibility = View.VISIBLE
 
@@ -135,8 +151,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun showReadyState() {
         statusTitle.text = "Focus Builder Active 🚀"
-        statusDesc.text = "Select a session duration and tap start:"
+        statusDesc.text = "Select apps and duration to start focusing:"
         btnGrant.text = "Start Focus Session"
+        btnSelectApps.visibility = View.VISIBLE
         timerControls.visibility = View.VISIBLE
         tvCountdown.visibility = View.VISIBLE
         tvCountdown.text = String.format("%02d:00", selectedMinutes)
