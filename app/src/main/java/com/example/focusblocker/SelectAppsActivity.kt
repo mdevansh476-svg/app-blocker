@@ -2,6 +2,7 @@ package com.example.focusblocker
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +12,12 @@ import androidx.appcompat.app.AppCompatActivity
 
 class SelectAppsActivity : AppCompatActivity() {
 
-    data class AppInfo(val name: String, val packageName: String, var isSelected: Boolean = false)
+    data class AppInfo(
+        val name: String,
+        val packageName: String,
+        val icon: Drawable?,
+        var isSelected: Boolean = false
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,7 +30,7 @@ class SelectAppsActivity : AppCompatActivity() {
         val savedBlocked = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
 
         val installedApps = getInstalledUserApps().map {
-            AppInfo(it.name, it.packageName, savedBlocked.contains(it.packageName))
+            AppInfo(it.name, it.packageName, it.icon, savedBlocked.contains(it.packageName))
         }.toMutableList()
 
         val adapter = AppListAdapter(this, installedApps)
@@ -54,7 +60,12 @@ class SelectAppsActivity : AppCompatActivity() {
             if (pkg == packageName) null
             else {
                 val label = resolveInfo.loadLabel(packageManager).toString()
-                AppInfo(label, pkg)
+                val icon = try {
+                    resolveInfo.loadIcon(packageManager)
+                } catch (e: Exception) {
+                    null
+                }
+                AppInfo(label, pkg, icon)
             }
         }.sortedBy { it.name.lowercase() }
     }
@@ -69,12 +80,17 @@ class SelectAppsActivity : AppCompatActivity() {
             val item = list[position]
 
             val tvName = view.findViewById<TextView>(R.id.tv_app_name)
-            val tvPkg = view.findViewById<TextView>(R.id.tv_package_name)
+            val ivIcon = view.findViewById<ImageView>(R.id.iv_app_icon)
             val cb = view.findViewById<CheckBox>(R.id.cb_select)
 
             tvName.text = item.name
-            tvPkg.text = item.packageName
             cb.isChecked = item.isSelected
+
+            if (item.icon != null) {
+                ivIcon.setImageDrawable(item.icon)
+            } else {
+                ivIcon.setImageResource(R.mipmap.ic_launcher)
+            }
 
             return view
         }
