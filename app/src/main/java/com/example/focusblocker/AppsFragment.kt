@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
+import kotlin.concurrent.thread
 
 class AppsFragment : Fragment() {
 
@@ -23,28 +24,37 @@ class AppsFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_apps, container, false)
 
         val listView = view.findViewById<ListView>(R.id.lv_apps)
+        val pbLoading = view.findViewById<ProgressBar>(R.id.pb_loading_apps)
         val btnSave = view.findViewById<Button>(R.id.btn_save_apps)
 
         val ctx = requireContext()
         val prefs = ctx.getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
         val savedBlocked = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
 
-        val installedApps = getInstalledUserApps().map {
-            AppInfo(it.name, it.packageName, it.icon, savedBlocked.contains(it.packageName))
-        }.toMutableList()
+        // Background thread loading eliminates tab-switch lag
+        thread {
+            val installedApps = getInstalledUserApps().map {
+                AppInfo(it.name, it.packageName, it.icon, savedBlocked.contains(it.packageName))
+            }.toMutableList()
 
-        val adapter = AppListAdapter(ctx, installedApps)
-        listView.adapter = adapter
+            activity?.runOnUiThread {
+                val adapter = AppListAdapter(ctx, installedApps)
+                listView.adapter = adapter
 
-        listView.setOnItemClickListener { _, _, position, _ ->
-            installedApps[position].isSelected = !installedApps[position].isSelected
-            adapter.notifyDataSetChanged()
-        }
+                listView.setOnItemClickListener { _, _, position, _ ->
+                    installedApps[position].isSelected = !installedApps[position].isSelected
+                    adapter.notifyDataSetChanged()
+                }
 
-        btnSave.setOnClickListener {
-            val selectedPackages = installedApps.filter { it.isSelected }.map { it.packageName }.toSet()
-            prefs.edit().putStringSet("blocked_apps", selectedPackages).apply()
-            Toast.makeText(ctx, "Saved ${selectedPackages.size} blocked apps!", Toast.LENGTH_SHORT).show()
+                btnSave.setOnClickListener {
+                    val selectedPackages = installedApps.filter { it.isSelected }.map { it.packageName }.toSet()
+                    prefs.edit().putStringSet("blocked_apps", selectedPackages).apply()
+                    Toast.makeText(ctx, "Saved ${selectedPackages.size} blocked apps!", Toast.LENGTH_SHORT).show()
+                }
+
+                pbLoading.visibility = View.GONE
+                listView.visibility = View.VISIBLE
+            }
         }
 
         return view
