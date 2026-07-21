@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions needed for app tracking, overlays, notifications, and running background timers -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -16,7 +15,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- Main Launcher Screen -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -26,7 +24,11 @@
             </intent-filter>
         </activity>
 
-        <!-- Background Timer & Blocker Service -->
+        <!-- New App Selector Screen -->
+        <activity
+            android:name=".SelectAppsActivity"
+            android:exported="false" />
+
         <service
             android:name=".FocusService"
             android:enabled="true"
