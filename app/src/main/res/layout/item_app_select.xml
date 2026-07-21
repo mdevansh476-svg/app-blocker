@@ -40,6 +40,7 @@
         android:layout_centerVertical="true"
         android:buttonTint="#8B5CF6"
         android:clickable="false"
-        android:focusInTouchMode="false" />
+        android:focusable="false"
+        android:focusableInTouchMode="false" />
 
 </RelativeLayout>
