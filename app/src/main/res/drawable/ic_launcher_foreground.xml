@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Stylized Focus Builder Block Structure forming an arrow/target -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,30l24,14v28l-24,14l-24,-14v-28zM54,38l-16,9.33v18.67l16,9.33l16,-9.33v-18.67z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,48l10,5.83v11.67l-10,5.83l-10,-5.83v-11.67z" />
+    <!-- Upward arrow block element -->
+    <path
+        android:fillColor="#69F0AE"
+        android:pathData="M54,20l6,10h-12z" />
+</vector>
