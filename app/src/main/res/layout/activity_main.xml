@@ -2,146 +2,16 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_main"
-    android:padding="20dp">
+    android:background="@drawable/bg_main">
 
-    <!-- Ambient Background Doodles -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true"
-        android:alpha="0.08"
-        android:text="🧠"
-        android:textSize="70sp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:alpha="0.08"
-        android:text="🎯"
-        android:textSize="80sp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_alignParentStart="true"
-        android:alpha="0.08"
-        android:text="⚡"
-        android:textSize="60sp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_alignParentEnd="true"
-        android:alpha="0.08"
-        android:text="🔒"
-        android:textSize="75sp" />
-
-    <!-- Header Section -->
-    <LinearLayout
-        android:id="@+id/header_layout"
+    <!-- Swappable Middle Content View -->
+    <FrameLayout
+        android:id="@+id/fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:gravity="center"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_navigation_bar" />
 
-        <TextView
-            android:id="@+id/app_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Focus Builder"
-            android:textColor="#F8FAFC"
-            android:textSize="28sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/status_desc"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Ready to lock down distractions"
-            android:textColor="#94A3B8"
-            android:textSize="14sp" />
-    </LinearLayout>
-
-    <!-- Center Interactive Timer & Start Circle Button -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <!-- Custom Timer Adjuster Controls -->
-        <LinearLayout
-            android:id="@+id/timer_picker_layout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="28dp"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btn_minus_5"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_card"
-                android:text="-5"
-                android:textColor="#E2E8F0"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tv_custom_time"
-                android:layout_width="140dp"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="25:00"
-                android:textColor="#6366F1"
-                android:textSize="40sp"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/btn_plus_5"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_card"
-                android:text="+5"
-                android:textColor="#E2E8F0"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- Circular Focus Button -->
-        <RelativeLayout
-            android:id="@+id/btn_circle_start"
-            android:layout_width="140dp"
-            android:layout_height="140dp"
-            android:background="@drawable/bg_circle_button"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center">
-
-            <TextView
-                android:id="@+id/tv_circle_button_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="START\nFOCUS"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </RelativeLayout>
-
-    </LinearLayout>
-
-    <!-- Persistent 4-Tab Bottom Navigation Bar -->
+    <!-- Permanent Fixed Bottom Navigation Bar -->
     <LinearLayout
         android:id="@+id/bottom_navigation_bar"
         android:layout_width="match_parent"
