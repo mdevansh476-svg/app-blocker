@@ -23,7 +23,9 @@ jobs:
       - name: Build Debug APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --warning-mode all
+        env:
+          ORG_GRADLE_PROJECT_kotlin_version: "1.8.20"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
