@@ -19,12 +19,13 @@ class FocusService : Service() {
     private var isRunning = false
     private val handler = Handler(Looper.getMainLooper())
     private var blockedApps = setOf<String>()
+    private lateinit var statsHelper: UsageStatsHelper
 
     private val appCheckRunnable = object : Runnable {
         override fun run() {
             if (isRunning) {
                 checkForegroundAppAndBlock()
-                handler.postDelayed(this, 500) // Check every half-second
+                handler.postDelayed(this, 500)
             }
         }
     }
@@ -33,11 +34,12 @@ class FocusService : Service() {
         val durationMinutes = intent?.getIntExtra("DURATION_MINUTES", 25) ?: 25
         val durationMillis = durationMinutes * 60 * 1000L
 
+        statsHelper = UsageStatsHelper(this)
         val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
         blockedApps = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
 
         createNotificationChannel()
-        val notification = createNotification("Focus Session Active", "Blocking ${blockedApps.size} apps")
+        val notification = createNotification("Focus Active & Enforcing Limits", "Monitoring app usage...")
         startForeground(1, notification)
 
         startFocusTimer(durationMillis)
@@ -61,14 +63,29 @@ class FocusService : Service() {
             }
         }
 
-        if (currentForegroundApp != null && blockedApps.contains(currentForegroundApp)) {
-            // Send user to Home Screen immediately!
-            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_HOME)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        if (currentForegroundApp != null) {
+            val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
+            val dailyLimitMinutes = prefs.getInt("limit_$currentForegroundApp", 0)
+
+            var shouldBlock = blockedApps.contains(currentForegroundApp)
+
+            // Check if app exceeded daily time limit
+            if (!shouldBlock && dailyLimitMinutes > 0) {
+                val todayMillis = statsHelper.getTodayUsageMillis(currentForegroundApp)
+                val todayMinutes = (todayMillis / 1000 / 60).toInt()
+                if (todayMinutes >= dailyLimitMinutes) {
+                    shouldBlock = true
+                }
             }
-            startActivity(homeIntent)
-            Toast.makeText(this, "Focus Builder: App is blocked!", Toast.LENGTH_SHORT).show()
+
+            if (shouldBlock) {
+                val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                    addCategory(Intent.CATEGORY_HOME)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(homeIntent)
+                Toast.makeText(this, "Focus Builder: App limit reached or blocked!", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -81,7 +98,7 @@ class FocusService : Service() {
                 val secondsLeft = (millisUntilFinished / 1000) % 60
                 val timeStr = String.format("%02d:%02d", minutesLeft, secondsLeft)
 
-                val updateNotif = createNotification("Focus Session Active", "Remaining: $timeStr")
+                val updateNotif = createNotification("Focus Active", "Remaining: $timeStr")
                 val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.notify(1, updateNotif)
 
