@@ -9,6 +9,7 @@ import android.os.Process
 import android.provider.Settings
 import android.view.View
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -24,8 +25,10 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var btnMinus5: Button
     private lateinit var btnPlus5: Button
-    private lateinit var btnSelectApps: Button
-    private lateinit var btnUsageAnalytics: Button
+
+    private lateinit var navTabFocus: LinearLayout
+    private lateinit var navTabApps: LinearLayout
+    private lateinit var navTabStats: LinearLayout
 
     private var customMinutes = 25
     private var isSessionActive = false
@@ -48,8 +51,10 @@ class MainActivity : AppCompatActivity() {
 
         btnMinus5 = findViewById(R.id.btn_minus_5)
         btnPlus5 = findViewById(R.id.btn_plus_5)
-        btnSelectApps = findViewById(R.id.btn_select_apps)
-        btnUsageAnalytics = findViewById(R.id.btn_usage_analytics)
+
+        navTabFocus = findViewById(R.id.nav_tab_focus)
+        navTabApps = findViewById(R.id.nav_tab_apps)
+        navTabStats = findViewById(R.id.nav_tab_stats)
 
         btnMinus5.setOnClickListener {
             if (customMinutes > 5) {
@@ -65,12 +70,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        btnSelectApps.setOnClickListener {
+        // Bottom Navigation Tab Actions
+        navTabApps.setOnClickListener {
             startActivity(Intent(this, SelectAppsActivity::class.java))
         }
 
-        btnUsageAnalytics.setOnClickListener {
+        navTabStats.setOnClickListener {
             startActivity(Intent(this, UsageStatsActivity::class.java))
+        }
+
+        navTabFocus.setOnClickListener {
+            Toast.makeText(this, "You're already on the Focus timer screen", Toast.LENGTH_SHORT).show()
         }
 
         btnCircleStart.setOnClickListener { handleCircleButtonClick() }
@@ -135,7 +145,7 @@ class MainActivity : AppCompatActivity() {
         val blockedApps = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
 
         if (blockedApps.isEmpty()) {
-            Toast.makeText(this, "Select at least 1 app in 'Blocked Apps' first!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Select at least 1 app in '📱 Apps' tab first!", Toast.LENGTH_LONG).show()
             startActivity(Intent(this, SelectAppsActivity::class.java))
             return
         }
