@@ -75,6 +75,18 @@
             android:textSize="14sp"
             android:visibility="gone" />
 
+        <Button
+            android:id="@+id/btn_usage_analytics"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_card"
+            android:text="Usage Analytics &amp; Daily Limits 📊"
+            android:textAllCaps="false"
+            android:textColor="#E2E8F0"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
         <!-- Timer Selector Controls -->
         <LinearLayout
             android:id="@+id/timer_controls"
