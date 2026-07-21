@@ -33,7 +33,7 @@
             android:textSize="14sp" />
     </LinearLayout>
 
-    <!-- Center Interactive Area: Circle Button & Custom Timer -->
+    <!-- Center Interactive Area: Timer & Start Circle Button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -41,12 +41,12 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <!-- Custom Timer Adjuster -->
+        <!-- Custom Timer Adjuster Controls -->
         <LinearLayout
             android:id="@+id/timer_picker_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="28dp"
             android:gravity="center"
             android:orientation="horizontal">
 
@@ -81,7 +81,7 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Giant Circular Focus Button -->
+        <!-- Circular Focus Button -->
         <RelativeLayout
             android:id="@+id/btn_circle_start"
             android:layout_width="140dp"
@@ -104,41 +104,82 @@
 
     </LinearLayout>
 
-    <!-- Bottom Navigation Bar Menu -->
+    <!-- Modern Bottom Navigation Bar -->
     <LinearLayout
-        android:id="@+id/bottom_menu_bar"
+        android:id="@+id/bottom_navigation_bar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="64dp"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_card"
+        android:gravity="center"
         android:orientation="horizontal"
-        android:weightSum="2">
+        android:paddingHorizontal="8dp"
+        android:weightSum="3">
 
-        <Button
-            android:id="@+id/btn_select_apps"
+        <!-- Field 1: Focus Tab (Active Default) -->
+        <LinearLayout
+            android:id="@+id/nav_tab_focus"
             android:layout_width="0dp"
-            android:layout_height="52dp"
+            android:layout_height="48dp"
             android:layout_weight="1"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_card"
-            android:text="Blocked Apps 📱"
-            android:textAllCaps="false"
-            android:textColor="#E2E8F0"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:background="@drawable/bg_nav_tab_active"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
 
-        <Button
-            android:id="@+id/btn_usage_analytics"
+            <TextView
+                android:id="@+id/tv_nav_focus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⏱️ Focus"
+                android:textColor="#8B5CF6"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Field 2: Blocked Apps Tab -->
+        <LinearLayout
+            android:id="@+id/nav_tab_apps"
             android:layout_width="0dp"
-            android:layout_height="52dp"
+            android:layout_height="48dp"
             android:layout_weight="1"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/bg_card"
-            android:text="Analytics 📊"
-            android:textAllCaps="false"
-            android:textColor="#E2E8F0"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_nav_apps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📱 Apps"
+                android:textColor="#94A3B8"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Field 3: Analytics Tab -->
+        <LinearLayout
+            android:id="@+id/nav_tab_stats"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_nav_stats"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📊 Stats"
+                android:textColor="#94A3B8"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
     </LinearLayout>
 
 </RelativeLayout>
