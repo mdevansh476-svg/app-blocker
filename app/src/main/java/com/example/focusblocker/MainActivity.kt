@@ -19,6 +19,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var btnGrant: Button
     private lateinit var btnSelectApps: Button
+    private lateinit var btnUsageAnalytics: Button
     private lateinit var statusTitle: TextView
     private lateinit var statusDesc: TextView
     private lateinit var timerControls: LinearLayout
@@ -44,6 +45,7 @@ class MainActivity : AppCompatActivity() {
 
         btnGrant = findViewById(R.id.btn_grant_permissions)
         btnSelectApps = findViewById(R.id.btn_select_apps)
+        btnUsageAnalytics = findViewById(R.id.btn_usage_analytics)
         statusTitle = findViewById(R.id.status_title)
         statusDesc = findViewById(R.id.status_desc)
         timerControls = findViewById(R.id.timer_controls)
@@ -59,6 +61,10 @@ class MainActivity : AppCompatActivity() {
 
         btnSelectApps.setOnClickListener {
             startActivity(Intent(this, SelectAppsActivity::class.java))
+        }
+
+        btnUsageAnalytics.setOnClickListener {
+            startActivity(Intent(this, UsageStatsActivity::class.java))
         }
 
         btnGrant.setOnClickListener { handleButtonClick() }
@@ -87,7 +93,7 @@ class MainActivity : AppCompatActivity() {
         val hasOverlay = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Settings.canDrawOverlays(this)
         } else true
-        
+
         val hasUsageStats = checkUsageStatsPermission()
         return hasOverlay && hasUsageStats
     }
@@ -135,6 +141,7 @@ class MainActivity : AppCompatActivity() {
         statusDesc.text = "Stay focused! ${blockedApps.size} apps are locked."
         btnGrant.text = "End Focus Session"
         btnSelectApps.visibility = View.GONE
+        btnUsageAnalytics.visibility = View.GONE
         timerControls.visibility = View.GONE
         tvCountdown.visibility = View.VISIBLE
 
@@ -154,6 +161,7 @@ class MainActivity : AppCompatActivity() {
         statusDesc.text = "Select apps and duration to start focusing:"
         btnGrant.text = "Start Focus Session"
         btnSelectApps.visibility = View.VISIBLE
+        btnUsageAnalytics.visibility = View.VISIBLE
         timerControls.visibility = View.VISIBLE
         tvCountdown.visibility = View.VISIBLE
         tvCountdown.text = String.format("%02d:00", selectedMinutes)
