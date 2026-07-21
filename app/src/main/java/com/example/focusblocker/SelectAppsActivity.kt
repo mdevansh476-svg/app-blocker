@@ -2,17 +2,16 @@ package com.example.focusblocker
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.ListView
-import android.widget.Toast
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 
 class SelectAppsActivity : AppCompatActivity() {
 
-    private data class AppInfo(val name: String, val packageName: String)
+    data class AppInfo(val name: String, val packageName: String, var isSelected: Boolean = false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,52 +20,63 @@ class SelectAppsActivity : AppCompatActivity() {
         val listView = findViewById<ListView>(R.id.lv_apps)
         val btnSave = findViewById<Button>(R.id.btn_save_apps)
 
-        val installedApps = getInstalledLaunchableApps()
-        val appNames = installedApps.map { it.name }
-
-        val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_multiple_choice, appNames)
-        listView.adapter = adapter
-        listView.choiceMode = ListView.CHOICE_MODE_MULTIPLE
-
         val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
         val savedBlocked = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
 
-        // Pre-check currently blocked apps
-        installedApps.forEachIndexed { index, appInfo ->
-            if (savedBlocked.contains(appInfo.packageName)) {
-                listView.setItemChecked(index, true)
-            }
+        val installedApps = getInstalledUserApps().map {
+            AppInfo(it.name, it.packageName, savedBlocked.contains(it.packageName))
+        }.toMutableList()
+
+        val adapter = AppListAdapter(this, installedApps)
+        listView.adapter = adapter
+
+        listView.setOnItemClickListener { _, _, position, _ ->
+            installedApps[position].isSelected = !installedApps[position].isSelected
+            adapter.notifyDataSetChanged()
         }
 
         btnSave.setOnClickListener {
-            val selectedPackages = mutableSetOf<String>()
-            val checkedPositions = listView.checkedItemPositions
-
-            for (i in 0 until installedApps.size) {
-                if (checkedPositions.get(i)) {
-                    selectedPackages.add(installedApps[i].packageName)
-                }
-            }
-
+            val selectedPackages = installedApps.filter { it.isSelected }.map { it.packageName }.toSet()
             prefs.edit().putStringSet("blocked_apps", selectedPackages).apply()
             Toast.makeText(this, "Saved ${selectedPackages.size} blocked apps!", Toast.LENGTH_SHORT).show()
             finish()
         }
     }
 
-    private fun getInstalledLaunchableApps(): List<AppInfo> {
+    private fun getInstalledUserApps(): List<AppInfo> {
         val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
         }
         val apps = packageManager.queryIntentActivities(mainIntent, 0)
-        
+
         return apps.mapNotNull { resolveInfo ->
             val pkg = resolveInfo.activityInfo.packageName
-            if (pkg == packageName) null // Skip Focus Builder itself
+            if (pkg == packageName) null
             else {
                 val label = resolveInfo.loadLabel(packageManager).toString()
                 AppInfo(label, pkg)
             }
         }.sortedBy { it.name.lowercase() }
+    }
+
+    private class AppListAdapter(
+        context: Context,
+        private val list: List<AppInfo>
+    ) : ArrayAdapter<AppInfo>(context, 0, list) {
+
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val view = convertView ?: LayoutInflater.from(context).inflate(R.layout.item_app_select, parent, false)
+            val item = list[position]
+
+            val tvName = view.findViewById<TextView>(R.id.tv_app_name)
+            val tvPkg = view.findViewById<TextView>(R.id.tv_package_name)
+            val cb = view.findViewById<CheckBox>(R.id.cb_select)
+
+            tvName.text = item.name
+            tvPkg.text = item.packageName
+            cb.isChecked = item.isSelected
+
+            return view
+        }
     }
 }
