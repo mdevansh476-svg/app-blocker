@@ -63,6 +63,58 @@
             android:textColor="#94A3B8"
             android:textSize="14sp" />
 
+        <!-- Timer Selector Controls (Visible when setup is complete) -->
+        <LinearLayout
+            android:id="@+id/timer_controls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/btn_15m"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_button"
+                android:text="15m"
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btn_25m"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_button"
+                android:text="25m"
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btn_45m"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_button"
+                android:text="45m"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <!-- Live Countdown View -->
+        <TextView
+            android:id="@+id/tv_countdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="25:00"
+            android:textColor="#6366F1"
+            android:textSize="42sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <Button
             android:id="@+id/btn_grant_permissions"
             android:layout_width="match_parent"
