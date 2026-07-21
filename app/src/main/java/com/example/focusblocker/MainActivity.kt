@@ -1,87 +1,153 @@
 package com.example.focusblocker
 
-import android.app.*
-import android.app.usage.UsageStatsManager
-import android.content.Context
-import android.content.Intent
+import android.app.AppOpsManager
+import android.content.*
+import android.net.Uri
 import android.os.Build
-import android.os.CountDownTimer
-import android.os.IBinder
-import androidx.core.app.NotificationCompat
+import android.os.Bundle
+import android.os.Process
+import android.provider.Settings
+import android.view.View
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 
-class FocusService : Service() {
+class MainActivity : AppCompatActivity() {
 
-    private var countDownTimer: CountDownTimer? = null
-    private var isRunning = false
+    private lateinit var btnGrant: Button
+    private lateinit var statusTitle: TextView
+    private lateinit var statusDesc: TextView
+    private lateinit var timerControls: LinearLayout
+    private lateinit var tvCountdown: TextView
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val durationMinutes = intent?.getIntExtra("DURATION_MINUTES", 25) ?: 25
-        val durationMillis = durationMinutes * 60 * 1000L
+    private lateinit var btn15m: Button
+    private lateinit var btn25m: Button
+    private lateinit var btn45m: Button
 
-        createNotificationChannel()
-        val notification = createNotification("Focus Session Active", "Time remaining: $durationMinutes min")
-        startForeground(1, notification)
+    private var selectedMinutes = 25
+    private var isSessionActive = false
 
-        startFocusTimer(durationMillis)
-        return START_STICKY
-    }
-
-    private fun startFocusTimer(durationMillis: Long) {
-        countDownTimer?.cancel()
-        isRunning = true
-
-        countDownTimer = object : CountDownTimer(durationMillis, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val minutesLeft = millisUntilFinished / 1000 / 60
-                val secondsLeft = (millisUntilFinished / 1000) % 60
-                val timeStr = String.format("%02d:%02d", minutesLeft, secondsLeft)
-
-                // Update Notification
-                val updateNotif = createNotification("Focus Session Active", "Remaining: $timeStr")
-                val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-                notificationManager.notify(1, updateNotif)
-
-                // Broadcast time to UI
-                val broadcastIntent = Intent("FOCUS_TIMER_UPDATE")
-                broadcastIntent.putExtra("TIME_LEFT", timeStr)
-                sendBroadcast(broadcastIntent)
-            }
-
-            override fun onFinish() {
-                isRunning = false
-                stopForeground(true)
-                stopSelf()
-            }
-        }.start()
-    }
-
-    private fun createNotification(title: String, content: String): Notification {
-        return NotificationCompat.Builder(this, "focus_channel")
-            .setContentTitle(title)
-            .setContentText(content)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "focus_channel",
-                "Focus Builder Sessions",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager?.createNotificationChannel(channel)
+    private val timerReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val timeRemaining = intent?.getStringExtra("TIME_LEFT") ?: return
+            tvCountdown.text = timeRemaining
         }
     }
 
-    override fun onDestroy() {
-        countDownTimer?.cancel()
-        isRunning = false
-        super.onDestroy()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        btnGrant = findViewById(R.id.btn_grant_permissions)
+        statusTitle = findViewById(R.id.status_title)
+        statusDesc = findViewById(R.id.status_desc)
+        timerControls = findViewById(R.id.timer_controls)
+        tvCountdown = findViewById(R.id.tv_countdown)
+
+        btn15m = findViewById(R.id.btn_15m)
+        btn25m = findViewById(R.id.btn_25m)
+        btn45m = findViewById(R.id.btn_45m)
+
+        btn15m.setOnClickListener { selectDuration(15) }
+        btn25m.setOnClickListener { selectDuration(25) }
+        btn45m.setOnClickListener { selectDuration(45) }
+
+        btnGrant.setOnClickListener { handleButtonClick() }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(timerReceiver, IntentFilter("FOCUS_TIMER_UPDATE"), RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(timerReceiver, IntentFilter("FOCUS_TIMER_UPDATE"))
+        }
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    override fun onResume() {
+        super.onResume()
+        if (hasAllPermissions() && !isSessionActive) {
+            showReadyState()
+        }
+    }
+
+    private fun selectDuration(mins: Int) {
+        selectedMinutes = mins
+        tvCountdown.text = String.format("%02d:00", mins)
+        Toast.makeText(this, "Set to $mins minutes", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun hasAllPermissions(): Boolean {
+        val hasOverlay = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(this)
+        } else true
+        
+        val hasUsageStats = checkUsageStatsPermission()
+        return hasOverlay && hasUsageStats
+    }
+
+    private fun checkUsageStatsPermission(): Boolean {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager ?: return false
+        val mode = appOps.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            Process.myUid(),
+            packageName
+        )
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    private fun handleButtonClick() {
+        if (!hasAllPermissions()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+                startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+                return
+            }
+            if (!checkUsageStatsPermission()) {
+                startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            }
+        } else {
+            if (!isSessionActive) {
+                startFocusSession()
+            } else {
+                stopFocusSession()
+            }
+        }
+    }
+
+    private fun startFocusSession() {
+        isSessionActive = true
+        statusTitle.text = "Focus Session Running 🎯"
+        statusDesc.text = "Stay focused! Distractions are locked."
+        btnGrant.text = "End Focus Session"
+        timerControls.visibility = View.GONE
+        tvCountdown.visibility = View.VISIBLE
+
+        val serviceIntent = Intent(this, FocusService::class.java)
+        serviceIntent.putExtra("DURATION_MINUTES", selectedMinutes)
+        ContextCompat.startForegroundService(this, serviceIntent)
+    }
+
+    private fun stopFocusSession() {
+        isSessionActive = false
+        stopService(Intent(this, FocusService::class.java))
+        showReadyState()
+    }
+
+    private fun showReadyState() {
+        statusTitle.text = "Focus Builder Active 🚀"
+        statusDesc.text = "Select a session duration and tap start:"
+        btnGrant.text = "Start Focus Session"
+        timerControls.visibility = View.VISIBLE
+        tvCountdown.visibility = View.VISIBLE
+        tvCountdown.text = String.format("%02d:00", selectedMinutes)
+    }
+
+    override fun onDestroy() {
+        try {
+            unregisterReceiver(timerReceiver)
+        } catch (e: Exception) {
+            // Ignored
+        }
+        super.onDestroy()
+    }
 }
