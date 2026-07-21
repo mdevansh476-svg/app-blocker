@@ -27,7 +27,6 @@ class FocusFragment : Fragment() {
     private lateinit var btnPlus5: Button
 
     private var customMinutes = 25
-    private var isSessionActive = false
 
     private val timerReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -74,6 +73,39 @@ class FocusFragment : Fragment() {
         } else {
             ctx.registerReceiver(timerReceiver, IntentFilter("FOCUS_TIMER_UPDATE"))
         }
+
+        syncSessionUI()
+    }
+
+    private fun syncSessionUI() {
+        val ctx = context ?: return
+        val prefs = ctx.getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
+        val isActive = prefs.getBoolean("is_session_active", false)
+        val targetEndTime = prefs.getLong("target_end_time", 0L)
+        val now = System.currentTimeMillis()
+
+        if (isActive && targetEndTime > now) {
+            val remainingMillis = targetEndTime - now
+            val minutesLeft = remainingMillis / 1000 / 60
+            val secondsLeft = (remainingMillis / 1000) % 60
+            tvCustomTime.text = String.format("%02d:%02d", minutesLeft, secondsLeft)
+
+            val blockedApps = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
+            statusDesc.text = "Session active • ${blockedApps.size} apps locked"
+            tvCircleText.text = "STOP\nSESSION"
+            btnCircleStart.setBackgroundResource(R.drawable.bg_circle_button_active)
+
+            btnMinus5.visibility = View.INVISIBLE
+            btnPlus5.visibility = View.INVISIBLE
+        } else {
+            statusDesc.text = "Ready to lock down distractions"
+            tvCircleText.text = "START\nFOCUS"
+            btnCircleStart.setBackgroundResource(R.drawable.bg_circle_button)
+
+            btnMinus5.visibility = View.VISIBLE
+            btnPlus5.visibility = View.VISIBLE
+            updateTimerDisplay()
+        }
     }
 
     override fun onPause() {
@@ -113,7 +145,9 @@ class FocusFragment : Fragment() {
             }
             startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
         } else {
-            if (!isSessionActive) startFocusSession() else stopFocusSession()
+            val prefs = ctx.getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
+            val isActive = prefs.getBoolean("is_session_active", false)
+            if (!isActive) startFocusSession() else stopFocusSession()
         }
     }
 
@@ -127,31 +161,23 @@ class FocusFragment : Fragment() {
             return
         }
 
-        isSessionActive = true
-        statusDesc.text = "Session active • ${blockedApps.size} apps locked"
-        tvCircleText.text = "STOP\nSESSION"
-        btnCircleStart.setBackgroundResource(R.drawable.bg_circle_button_active)
-
-        btnMinus5.visibility = View.INVISIBLE
-        btnPlus5.visibility = View.INVISIBLE
-
         val serviceIntent = Intent(ctx, FocusService::class.java).apply {
             putExtra("DURATION_MINUTES", customMinutes)
         }
         ContextCompat.startForegroundService(ctx, serviceIntent)
+        syncSessionUI()
     }
 
     private fun stopFocusSession() {
         val ctx = requireContext()
-        isSessionActive = false
         ctx.stopService(Intent(ctx, FocusService::class.java))
 
-        statusDesc.text = "Ready to lock down distractions"
-        tvCircleText.text = "START\nFOCUS"
-        btnCircleStart.setBackgroundResource(R.drawable.bg_circle_button)
+        val prefs = ctx.getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putBoolean("is_session_active", false)
+            .putLong("target_end_time", 0L)
+            .apply()
 
-        btnMinus5.visibility = View.VISIBLE
-        btnPlus5.visibility = View.VISIBLE
-        updateTimerDisplay()
+        syncSessionUI()
     }
 }
