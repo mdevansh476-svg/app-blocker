@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import java.util.ArrayList
 
 class AppStatsAdapter(
     private val context: Context,
@@ -24,6 +23,7 @@ class AppStatsAdapter(
         val data = appList[position]
 
         val tvName = view.findViewById<TextView>(R.id.tv_app_name)
+        val ivIcon = view.findViewById<ImageView>(R.id.iv_app_icon)
         val tvLimitStatus = view.findViewById<TextView>(R.id.tv_limit_status)
         val pbGraph = view.findViewById<ProgressBar>(R.id.pb_usage_graph)
         val btnSetLimit = view.findViewById<Button>(R.id.btn_set_limit)
@@ -39,7 +39,12 @@ class AppStatsAdapter(
         tvDailyAvg.text = UsageStatsHelper.formatMillis(data.dailyAvgMillis)
         tvWeeklyTotal.text = UsageStatsHelper.formatMillis(data.weeklyTotalMillis)
 
-        // Set up Graph Progress Bar
+        if (data.appIcon != null) {
+            ivIcon.setImageDrawable(data.appIcon)
+        } else {
+            ivIcon.setImageResource(R.mipmap.ic_launcher)
+        }
+
         val todayMins = (data.todayMillis / 1000 / 60).toInt()
         if (data.dailyLimitMinutes > 0) {
             tvLimitStatus.text = "Daily Limit: $todayMins / ${data.dailyLimitMinutes} mins"
@@ -47,7 +52,7 @@ class AppStatsAdapter(
             pbGraph.progress = progressPercent.coerceAtMost(100)
         } else {
             tvLimitStatus.text = "Daily Limit: Off"
-            pbGraph.progress = (todayMins / 3).coerceAtMost(100) // Default visual relative scale
+            pbGraph.progress = (todayMins / 3).coerceAtMost(100)
         }
 
         btnSetLimit.setOnClickListener {
