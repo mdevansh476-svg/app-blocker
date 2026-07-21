@@ -33,9 +33,15 @@ class FocusService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val durationMinutes = intent?.getIntExtra("DURATION_MINUTES", 25) ?: 25
         val durationMillis = durationMinutes * 60 * 1000L
+        val targetEndTime = System.currentTimeMillis() + durationMillis
+
+        val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putBoolean("is_session_active", true)
+            .putLong("target_end_time", targetEndTime)
+            .apply()
 
         statsHelper = UsageStatsHelper(this)
-        val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
         blockedApps = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
 
         createNotificationChannel()
@@ -69,7 +75,6 @@ class FocusService : Service() {
 
             var shouldBlock = blockedApps.contains(currentForegroundApp)
 
-            // Check if app exceeded daily time limit
             if (!shouldBlock && dailyLimitMinutes > 0) {
                 val todayMillis = statsHelper.getTodayUsageMillis(currentForegroundApp)
                 val todayMinutes = (todayMillis / 1000 / 60).toInt()
@@ -108,12 +113,21 @@ class FocusService : Service() {
             }
 
             override fun onFinish() {
-                isRunning = false
-                handler.removeCallbacks(appCheckRunnable)
+                cleanUpSessionState()
                 stopForeground(true)
                 stopSelf()
             }
         }.start()
+    }
+
+    private fun cleanUpSessionState() {
+        isRunning = false
+        handler.removeCallbacks(appCheckRunnable)
+        val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putBoolean("is_session_active", false)
+            .putLong("target_end_time", 0L)
+            .apply()
     }
 
     private fun createNotification(title: String, content: String): Notification {
@@ -140,8 +154,7 @@ class FocusService : Service() {
 
     override fun onDestroy() {
         countDownTimer?.cancel()
-        isRunning = false
-        handler.removeCallbacks(appCheckRunnable)
+        cleanUpSessionState()
         super.onDestroy()
     }
 
