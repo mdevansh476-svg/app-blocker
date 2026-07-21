@@ -1,32 +1,79 @@
 package com.example.focusblocker
 
 import android.app.*
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.CountDownTimer
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 
 class FocusService : Service() {
 
     private var countDownTimer: CountDownTimer? = null
     private var isRunning = false
+    private val handler = Handler(Looper.getMainLooper())
+    private var blockedApps = setOf<String>()
+
+    private val appCheckRunnable = object : Runnable {
+        override fun run() {
+            if (isRunning) {
+                checkForegroundAppAndBlock()
+                handler.postDelayed(this, 500) // Check every half-second
+            }
+        }
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val durationMinutes = intent?.getIntExtra("DURATION_MINUTES", 25) ?: 25
         val durationMillis = durationMinutes * 60 * 1000L
 
+        val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
+        blockedApps = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
+
         createNotificationChannel()
-        val notification = createNotification("Focus Session Active", "Time remaining: $durationMinutes min")
+        val notification = createNotification("Focus Session Active", "Blocking ${blockedApps.size} apps")
         startForeground(1, notification)
 
         startFocusTimer(durationMillis)
+        isRunning = true
+        handler.post(appCheckRunnable)
+
         return START_STICKY
+    }
+
+    private fun checkForegroundAppAndBlock() {
+        val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager ?: return
+        val time = System.currentTimeMillis()
+        val usageEvents = usageStatsManager.queryEvents(time - 2000, time)
+        val event = UsageEvents.Event()
+
+        var currentForegroundApp: String? = null
+        while (usageEvents.hasNextEvent()) {
+            usageEvents.getNextEvent(event)
+            if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
+                currentForegroundApp = event.packageName
+            }
+        }
+
+        if (currentForegroundApp != null && blockedApps.contains(currentForegroundApp)) {
+            // Send user to Home Screen immediately!
+            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_HOME)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            startActivity(homeIntent)
+            Toast.makeText(this, "Focus Builder: App is blocked!", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun startFocusTimer(durationMillis: Long) {
         countDownTimer?.cancel()
-        isRunning = true
 
         countDownTimer = object : CountDownTimer(durationMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
@@ -34,12 +81,10 @@ class FocusService : Service() {
                 val secondsLeft = (millisUntilFinished / 1000) % 60
                 val timeStr = String.format("%02d:%02d", minutesLeft, secondsLeft)
 
-                // Update Notification
                 val updateNotif = createNotification("Focus Session Active", "Remaining: $timeStr")
                 val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.notify(1, updateNotif)
 
-                // Broadcast time to UI
                 val broadcastIntent = Intent("FOCUS_TIMER_UPDATE")
                 broadcastIntent.putExtra("TIME_LEFT", timeStr)
                 sendBroadcast(broadcastIntent)
@@ -47,6 +92,7 @@ class FocusService : Service() {
 
             override fun onFinish() {
                 isRunning = false
+                handler.removeCallbacks(appCheckRunnable)
                 stopForeground(true)
                 stopSelf()
             }
@@ -78,6 +124,7 @@ class FocusService : Service() {
     override fun onDestroy() {
         countDownTimer?.cancel()
         isRunning = false
+        handler.removeCallbacks(appCheckRunnable)
         super.onDestroy()
     }
 
