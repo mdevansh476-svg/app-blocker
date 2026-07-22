@@ -18,7 +18,7 @@
             android:textSize="24sp"
             android:textStyle="bold" />
 
-        <!-- Overlay Settings Card -->
+        <!-- Overlay Switch Card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -51,12 +51,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Shows a draggable mini timer on top of other apps during sessions."
+                android:text="Shows a draggable mini timer on top of other apps during focus sessions."
                 android:textColor="#94A3B8"
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Previous Session History Card -->
+        <!-- Focus Session History Log Card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -78,12 +78,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="• Today: 25 mins focus (3 apps locked)\n• Yesterday: 45 mins focus (2 apps locked)\n• 2 days ago: 60 mins focus (5 apps locked)"
+                android:text="• Today: 25 mins focus session completed\n• Yesterday: 45 mins focus session completed\n• 2 days ago: 60 mins focus session completed"
                 android:textColor="#94A3B8"
                 android:textSize="13sp" />
         </LinearLayout>
 
-        <!-- Developer & About Card -->
+        <!-- Developer Profile Card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -93,21 +93,51 @@
             android:orientation="vertical"
             android:padding="20dp">
 
+            <ImageView
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:src="@mipmap/ic_launcher" />
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Focus Builder v2.0"
+                android:layout_marginTop="8dp"
+                android:text="Focus Builder v2.0 Pro"
                 android:textColor="#8B5CF6"
-                android:textSize="16sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="12dp"
+                android:background="#334155" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="DEVELOPED BY"
+                android:textColor="#64748B"
+                android:textSize="11sp"
+                android:letterSpacing="0.1" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Developed by Devansh"
-                android:textColor="#E2E8F0"
-                android:textSize="14sp" />
+                android:text="Devansh"
+                android:textColor="#F8FAFC"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:text="Built to eliminate distractions, enforce custom usage limits, and build productive screen time habits."
+                android:textColor="#94A3B8"
+                android:textSize="12sp" />
         </LinearLayout>
 
     </LinearLayout>
