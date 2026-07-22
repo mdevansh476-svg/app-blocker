@@ -69,10 +69,22 @@
             android:layout_height="32dp"
             android:layout_marginTop="4dp"
             android:background="@null"
-            android:text="Minimize ✖"
+            android:text="Minimize"
             android:textAllCaps="false"
             android:textColor="#94A3B8"
             android:textSize="11sp" />
+
+        <!-- Dismiss/Close Widget Button -->
+        <Button
+            android:id="@+id/btn_overlay_close"
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:background="@null"
+            android:text="✖ Close Widget"
+            android:textAllCaps="false"
+            android:textColor="#EF4444"
+            android:textSize="11sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
 </FrameLayout>
