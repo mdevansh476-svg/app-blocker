@@ -15,7 +15,6 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <!-- Real App Icon -->
         <ImageView
             android:id="@+id/iv_app_icon"
             android:layout_width="40dp"
