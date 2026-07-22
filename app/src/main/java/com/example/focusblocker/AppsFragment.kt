@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,12 +26,16 @@ class AppsFragment : Fragment() {
     private val gameKeywords = listOf("game", "pubg", "roblox", "freefire", "clash", "candy", "subway", "minecraft")
     private val streamingKeywords = listOf("youtube", "netflix", "prime", "hulu", "twitch", "hotstar", "disney")
 
+    private var masterAppList = mutableListOf<AppInfo>()
+    private var displayedAppList = mutableListOf<AppInfo>()
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_apps, container, false)
 
         val listView = view.findViewById<ListView>(R.id.lv_apps)
         val pbLoading = view.findViewById<ProgressBar>(R.id.pb_loading_apps)
         val btnSave = view.findViewById<Button>(R.id.btn_save_apps)
+        val etSearch = view.findViewById<EditText>(R.id.et_search_apps)
 
         val btnSocial = view.findViewById<Button>(R.id.btn_group_social)
         val btnGames = view.findViewById<Button>(R.id.btn_group_games)
@@ -40,33 +46,40 @@ class AppsFragment : Fragment() {
         val savedBlocked = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
 
         thread {
-            val installedApps = getInstalledUserApps().map {
+            masterAppList = getInstalledUserApps().map {
                 AppInfo(it.name, it.packageName, it.icon, savedBlocked.contains(it.packageName))
             }.toMutableList()
 
+            sortAppsWithSelectedOnTop(masterAppList)
+            displayedAppList.clear()
+            displayedAppList.addAll(masterAppList)
+
             activity?.runOnUiThread {
-                val adapter = AppListAdapter(ctx, installedApps)
+                val adapter = AppListAdapter(ctx, displayedAppList)
                 listView.adapter = adapter
 
                 listView.setOnItemClickListener { _, _, position, _ ->
-                    installedApps[position].isSelected = !installedApps[position].isSelected
-                    adapter.notifyDataSetChanged()
+                    val clickedApp = displayedAppList[position]
+                    clickedApp.isSelected = !clickedApp.isSelected
+
+                    sortAppsWithSelectedOnTop(masterAppList)
+                    filterList(etSearch.text.toString(), adapter)
                 }
 
-                btnSocial.setOnClickListener {
-                    toggleCategorySelection(installedApps, socialKeywords, adapter)
-                }
+                etSearch.addTextChangedListener(object : TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                        filterList(s.toString(), adapter)
+                    }
+                    override fun afterTextChanged(s: Editable?) {}
+                })
 
-                btnGames.setOnClickListener {
-                    toggleCategorySelection(installedApps, gameKeywords, adapter)
-                }
-
-                btnStreaming.setOnClickListener {
-                    toggleCategorySelection(installedApps, streamingKeywords, adapter)
-                }
+                btnSocial.setOnClickListener { toggleCategorySelection(socialKeywords, adapter) }
+                btnGames.setOnClickListener { toggleCategorySelection(gameKeywords, adapter) }
+                btnStreaming.setOnClickListener { toggleCategorySelection(streamingKeywords, adapter) }
 
                 btnSave.setOnClickListener {
-                    val selectedPackages = installedApps.filter { it.isSelected }.map { it.packageName }.toSet()
+                    val selectedPackages = masterAppList.filter { it.isSelected }.map { it.packageName }.toSet()
                     prefs.edit().putStringSet("blocked_apps", selectedPackages).apply()
                     Toast.makeText(ctx, "Saved ${selectedPackages.size} blocked apps!", Toast.LENGTH_SHORT).show()
                 }
@@ -79,19 +92,36 @@ class AppsFragment : Fragment() {
         return view
     }
 
-    private fun toggleCategorySelection(list: MutableList<AppInfo>, keywords: List<String>, adapter: AppListAdapter) {
-        var count = 0
-        list.forEach { app ->
+    private fun sortAppsWithSelectedOnTop(list: MutableList<AppInfo>) {
+        list.sortWith(compareByDescending<AppInfo> { it.isSelected }.thenBy { it.name.lowercase() })
+    }
+
+    private fun filterList(query: String, adapter: AppListAdapter) {
+        displayedAppList.clear()
+        if (query.isEmpty()) {
+            displayedAppList.addAll(masterAppList)
+        } else {
+            val q = query.lowercase()
+            displayedAppList.addAll(masterAppList.filter {
+                it.name.lowercase().contains(q) || it.packageName.lowercase().contains(q)
+            })
+        }
+        adapter.notifyDataSetChanged()
+    }
+
+    private fun toggleCategorySelection(keywords: List<String>, adapter: AppListAdapter) {
+        masterAppList.forEach { app ->
             val matches = keywords.any { kw ->
                 app.packageName.lowercase().contains(kw) || app.name.lowercase().contains(kw)
             }
             if (matches) {
                 app.isSelected = true
-                count++
             }
         }
+        sortAppsWithSelectedOnTop(masterAppList)
+        displayedAppList.clear()
+        displayedAppList.addAll(masterAppList)
         adapter.notifyDataSetChanged()
-        Toast.makeText(requireContext(), "Selected $count matching apps", Toast.LENGTH_SHORT).show()
     }
 
     private fun getInstalledUserApps(): List<AppInfo> {
@@ -109,7 +139,7 @@ class AppsFragment : Fragment() {
                 val icon = try { resolveInfo.loadIcon(pm) } catch (e: Exception) { null }
                 AppInfo(label, pkg, icon)
             }
-        }.sortedBy { it.name.lowercase() }
+        }
     }
 
     private class AppListAdapter(
