@@ -33,7 +33,6 @@ class MainActivity : AppCompatActivity() {
         tvNavStats = findViewById(R.id.tv_nav_stats)
         tvNavAbout = findViewById(R.id.tv_nav_about)
 
-        // Load default Focus fragment
         if (savedInstanceState == null) {
             replaceFragment(FocusFragment())
         }
@@ -54,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         navTabAbout.setOnClickListener {
-            replaceFragment(AboutFragment())
+            replaceFragment(MoreFragment())
             highlightTab(navTabAbout, tvNavAbout)
         }
     }
