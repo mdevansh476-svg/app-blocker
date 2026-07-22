@@ -1,10 +1,12 @@
 package com.example.focusblocker
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 
 class MainActivity : AppCompatActivity() {
@@ -22,6 +24,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Ensure background limit monitoring service is running
+        val serviceIntent = Intent(this, FocusService::class.java)
+        ContextCompat.startForegroundService(this, serviceIntent)
 
         navTabFocus = findViewById(R.id.nav_tab_focus)
         navTabApps = findViewById(R.id.nav_tab_apps)
