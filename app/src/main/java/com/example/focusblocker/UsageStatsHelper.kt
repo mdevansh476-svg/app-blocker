@@ -45,14 +45,23 @@ class UsageStatsHelper(private val context: Context) {
     }
 
     fun getTodayUsageMillis(packageName: String): Long {
-        val startOfToday = Calendar.getInstance().apply {
+        val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
+        }
+        val startOfToday = calendar.timeInMillis
+        val now = System.currentTimeMillis()
 
-        return queryUsageForRange(packageName, startOfToday, System.currentTimeMillis())
+        val stats = usageStatsManager.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY,
+            startOfToday,
+            now
+        ) ?: return 0L
+
+        return stats.filter { it.packageName == packageName }
+            .sumOf { it.totalTimeInForeground }
     }
 
     private fun getYesterdayUsageMillis(packageName: String): Long {
@@ -71,7 +80,14 @@ class UsageStatsHelper(private val context: Context) {
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
 
-        return queryUsageForRange(packageName, startOfYesterday, endOfYesterday)
+        val stats = usageStatsManager.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY,
+            startOfYesterday,
+            endOfYesterday
+        ) ?: return 0L
+
+        return stats.filter { it.packageName == packageName }
+            .sumOf { it.totalTimeInForeground }
     }
 
     private fun getWeeklyUsageMillis(packageName: String): Long {
@@ -83,14 +99,10 @@ class UsageStatsHelper(private val context: Context) {
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
 
-        return queryUsageForRange(packageName, startOf7DaysAgo, System.currentTimeMillis())
-    }
-
-    private fun queryUsageForRange(packageName: String, startTime: Long, endTime: Long): Long {
         val stats = usageStatsManager.queryUsageStats(
             UsageStatsManager.INTERVAL_DAILY,
-            startTime,
-            endTime
+            startOf7DaysAgo,
+            System.currentTimeMillis()
         ) ?: return 0L
 
         return stats.filter { it.packageName == packageName }
