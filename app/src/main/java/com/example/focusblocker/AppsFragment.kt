@@ -20,6 +20,10 @@ class AppsFragment : Fragment() {
         var isSelected: Boolean = false
     )
 
+    private val socialKeywords = listOf("instagram", "facebook", "whatsapp", "snapchat", "tiktok", "twitter", "x", "reddit", "discord", "telegram")
+    private val gameKeywords = listOf("game", "pubg", "roblox", "freefire", "clash", "candy", "subway", "minecraft")
+    private val streamingKeywords = listOf("youtube", "netflix", "prime", "hulu", "twitch", "hotstar", "disney")
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_apps, container, false)
 
@@ -27,11 +31,14 @@ class AppsFragment : Fragment() {
         val pbLoading = view.findViewById<ProgressBar>(R.id.pb_loading_apps)
         val btnSave = view.findViewById<Button>(R.id.btn_save_apps)
 
+        val btnSocial = view.findViewById<Button>(R.id.btn_group_social)
+        val btnGames = view.findViewById<Button>(R.id.btn_group_games)
+        val btnStreaming = view.findViewById<Button>(R.id.btn_group_streaming)
+
         val ctx = requireContext()
         val prefs = ctx.getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
         val savedBlocked = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
 
-        // Background thread loading eliminates tab-switch lag
         thread {
             val installedApps = getInstalledUserApps().map {
                 AppInfo(it.name, it.packageName, it.icon, savedBlocked.contains(it.packageName))
@@ -46,6 +53,18 @@ class AppsFragment : Fragment() {
                     adapter.notifyDataSetChanged()
                 }
 
+                btnSocial.setOnClickListener {
+                    toggleCategorySelection(installedApps, socialKeywords, adapter)
+                }
+
+                btnGames.setOnClickListener {
+                    toggleCategorySelection(installedApps, gameKeywords, adapter)
+                }
+
+                btnStreaming.setOnClickListener {
+                    toggleCategorySelection(installedApps, streamingKeywords, adapter)
+                }
+
                 btnSave.setOnClickListener {
                     val selectedPackages = installedApps.filter { it.isSelected }.map { it.packageName }.toSet()
                     prefs.edit().putStringSet("blocked_apps", selectedPackages).apply()
@@ -58,6 +77,21 @@ class AppsFragment : Fragment() {
         }
 
         return view
+    }
+
+    private fun toggleCategorySelection(list: MutableList<AppInfo>, keywords: List<String>, adapter: AppListAdapter) {
+        var count = 0
+        list.forEach { app ->
+            val matches = keywords.any { kw ->
+                app.packageName.lowercase().contains(kw) || app.name.lowercase().contains(kw)
+            }
+            if (matches) {
+                app.isSelected = true
+                count++
+            }
+        }
+        adapter.notifyDataSetChanged()
+        Toast.makeText(requireContext(), "Selected $count matching apps", Toast.LENGTH_SHORT).show()
     }
 
     private fun getInstalledUserApps(): List<AppInfo> {
