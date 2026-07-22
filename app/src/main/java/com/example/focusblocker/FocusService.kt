@@ -3,8 +3,7 @@ package com.example.focusblocker
 import android.app.*
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.os.Build
 import android.os.CountDownTimer
 import android.os.Handler
@@ -17,12 +16,26 @@ class FocusService : Service() {
 
     private var countDownTimer: CountDownTimer? = null
     private var isSessionActive = false
+    private var isPaused = false
+    private var millisRemaining = 0L
+
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var statsHelper: UsageStatsHelper
 
+    private val controlReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.getStringExtra("ACTION")) {
+                "PAUSE" -> pauseSession()
+                "RESUME" -> resumeSession()
+            }
+        }
+    }
+
     private val monitorRunnable = object : Runnable {
         override fun run() {
-            checkForegroundAppAndEnforceLimits()
+            if (!isPaused) {
+                checkForegroundAppAndEnforceLimits()
+            }
             handler.postDelayed(this, 1000)
         }
     }
@@ -31,7 +44,15 @@ class FocusService : Service() {
         super.onCreate()
         statsHelper = UsageStatsHelper(this)
         createNotificationChannel()
-        startForeground(1, createNotification("Focus Builder Monitoring", "Enforcing app limits and focus sessions..."))
+        startForeground(1, createNotification("Focus Protection Active", "Monitoring limits and sessions..."))
+
+        val filter = IntentFilter("FOCUS_SESSION_ACTION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(controlReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(controlReceiver, filter)
+        }
+
         handler.post(monitorRunnable)
     }
 
@@ -39,8 +60,8 @@ class FocusService : Service() {
         val durationMinutes = intent?.getIntExtra("DURATION_MINUTES", 0) ?: 0
 
         if (durationMinutes > 0) {
-            val durationMillis = durationMinutes * 60 * 1000L
-            val targetEndTime = System.currentTimeMillis() + durationMillis
+            millisRemaining = durationMinutes * 60 * 1000L
+            val targetEndTime = System.currentTimeMillis() + millisRemaining
 
             val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
             prefs.edit()
@@ -49,15 +70,31 @@ class FocusService : Service() {
                 .apply()
 
             isSessionActive = true
+            isPaused = false
 
             if (prefs.getBoolean("enable_overlay", true)) {
                 startService(Intent(this, OverlayService::class.java))
             }
 
-            startFocusTimer(durationMillis)
+            startFocusTimer(millisRemaining)
         }
 
         return START_STICKY
+    }
+
+    private fun pauseSession() {
+        isPaused = true
+        countDownTimer?.cancel()
+        val broadcastIntent = Intent("FOCUS_TIMER_UPDATE")
+        broadcastIntent.putExtra("TIME_LEFT", "PAUSED")
+        sendBroadcast(broadcastIntent)
+    }
+
+    private fun resumeSession() {
+        if (isPaused && millisRemaining > 0) {
+            isPaused = false
+            startFocusTimer(millisRemaining)
+        }
     }
 
     private fun checkForegroundAppAndEnforceLimits() {
@@ -81,12 +118,10 @@ class FocusService : Service() {
 
             var shouldBlock = false
 
-            // Check 1: Active Focus Session Block
             if (isSessionActive && blockedApps.contains(currentForegroundApp)) {
                 shouldBlock = true
             }
 
-            // Check 2: Daily Limit Check
             if (!shouldBlock && dailyLimitMinutes > 0) {
                 val todayMillis = statsHelper.getTodayUsageMillis(currentForegroundApp)
                 val todayMinutes = (todayMillis / 1000 / 60).toInt()
@@ -101,7 +136,7 @@ class FocusService : Service() {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 startActivity(homeIntent)
-                Toast.makeText(this, "Focus Builder: Limit reached for $currentForegroundApp!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Focus Builder: Access blocked!", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -111,6 +146,9 @@ class FocusService : Service() {
 
         countDownTimer = object : CountDownTimer(durationMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
+                if (isPaused) return
+                millisRemaining = millisUntilFinished
+
                 val minutesLeft = millisUntilFinished / 1000 / 60
                 val secondsLeft = (millisUntilFinished / 1000) % 60
                 val timeStr = String.format("%02d:%02d", minutesLeft, secondsLeft)
@@ -128,6 +166,7 @@ class FocusService : Service() {
 
     private fun stopFocusSession() {
         isSessionActive = false
+        isPaused = false
         stopService(Intent(this, OverlayService::class.java))
 
         val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
@@ -160,6 +199,7 @@ class FocusService : Service() {
     }
 
     override fun onDestroy() {
+        try { unregisterReceiver(controlReceiver) } catch (e: Exception) {}
         countDownTimer?.cancel()
         handler.removeCallbacks(monitorRunnable)
         super.onDestroy()
