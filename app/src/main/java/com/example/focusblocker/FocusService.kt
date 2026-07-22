@@ -17,16 +17,17 @@ class FocusService : Service() {
 
     private var countDownTimer: CountDownTimer? = null
     private var isRunning = false
+    private var isPaused = false
     private val handler = Handler(Looper.getMainLooper())
     private var blockedApps = setOf<String>()
     private lateinit var statsHelper: UsageStatsHelper
 
     private val appCheckRunnable = object : Runnable {
         override fun run() {
-            if (isRunning) {
+            if (isRunning && !isPaused) {
                 checkForegroundAppAndBlock()
-                handler.postDelayed(this, 500)
             }
+            handler.postDelayed(this, 500)
         }
     }
 
@@ -45,8 +46,11 @@ class FocusService : Service() {
         blockedApps = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
 
         createNotificationChannel()
-        val notification = createNotification("Focus Active & Enforcing Limits", "Monitoring app usage...")
-        startForeground(1, notification)
+        startForeground(1, createNotification("Focus Active", "Enforcing limits..."))
+
+        if (prefs.getBoolean("enable_overlay", true)) {
+            startService(Intent(this, OverlayService::class.java))
+        }
 
         startFocusTimer(durationMillis)
         isRunning = true
@@ -99,13 +103,11 @@ class FocusService : Service() {
 
         countDownTimer = object : CountDownTimer(durationMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
+                if (isPaused) return
+
                 val minutesLeft = millisUntilFinished / 1000 / 60
                 val secondsLeft = (millisUntilFinished / 1000) % 60
                 val timeStr = String.format("%02d:%02d", minutesLeft, secondsLeft)
-
-                val updateNotif = createNotification("Focus Active", "Remaining: $timeStr")
-                val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-                notificationManager.notify(1, updateNotif)
 
                 val broadcastIntent = Intent("FOCUS_TIMER_UPDATE")
                 broadcastIntent.putExtra("TIME_LEFT", timeStr)
@@ -123,6 +125,8 @@ class FocusService : Service() {
     private fun cleanUpSessionState() {
         isRunning = false
         handler.removeCallbacks(appCheckRunnable)
+        stopService(Intent(this, OverlayService::class.java))
+
         val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
         prefs.edit()
             .putBoolean("is_session_active", false)
