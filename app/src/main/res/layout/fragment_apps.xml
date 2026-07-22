@@ -19,20 +19,28 @@
             android:textSize="24sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Select individually or lock entire categories:"
-            android:textColor="#94A3B8"
-            android:textSize="13sp" />
+        <!-- App Search Bar -->
+        <EditText
+            android:id="@+id/et_search_apps"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_card"
+            android:drawableStart="@android:drawable/ic_menu_search"
+            android:drawablePadding="10dp"
+            android:hint="Search installed apps..."
+            android:inputType="text"
+            android:paddingHorizontal="12dp"
+            android:textColor="#F8FAFC"
+            android:textColorHint="#64748B"
+            android:textSize="14sp" />
 
-        <!-- Quick Category Select Bar -->
+        <!-- Category Select Bar -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="12dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
             android:scrollbars="none">
 
             <LinearLayout
@@ -43,11 +51,11 @@
                 <Button
                     android:id="@+id/btn_group_social"
                     android:layout_width="wrap_content"
-                    android:layout_height="38dp"
+                    android:layout_height="36dp"
                     android:layout_marginEnd="8dp"
                     android:background="@drawable/bg_card"
-                    android:paddingHorizontal="14dp"
-                    android:text="💬 Select Social"
+                    android:paddingHorizontal="12dp"
+                    android:text="💬 Social"
                     android:textAllCaps="false"
                     android:textColor="#E2E8F0"
                     android:textSize="12sp"
@@ -56,11 +64,11 @@
                 <Button
                     android:id="@+id/btn_group_games"
                     android:layout_width="wrap_content"
-                    android:layout_height="38dp"
+                    android:layout_height="36dp"
                     android:layout_marginEnd="8dp"
                     android:background="@drawable/bg_card"
-                    android:paddingHorizontal="14dp"
-                    android:text="🎮 Select Games"
+                    android:paddingHorizontal="12dp"
+                    android:text="🎮 Games"
                     android:textAllCaps="false"
                     android:textColor="#E2E8F0"
                     android:textSize="12sp"
@@ -69,10 +77,10 @@
                 <Button
                     android:id="@+id/btn_group_streaming"
                     android:layout_width="wrap_content"
-                    android:layout_height="38dp"
+                    android:layout_height="36dp"
                     android:background="@drawable/bg_card"
-                    android:paddingHorizontal="14dp"
-                    android:text="🎬 Select Video"
+                    android:paddingHorizontal="12dp"
+                    android:text="🎬 Video"
                     android:textAllCaps="false"
                     android:textColor="#E2E8F0"
                     android:textSize="12sp"
