@@ -14,29 +14,32 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navTabFocus: LinearLayout
     private lateinit var navTabApps: LinearLayout
     private lateinit var navTabStats: LinearLayout
+    private lateinit var navTabHistory: LinearLayout
     private lateinit var navTabAbout: LinearLayout
 
     private lateinit var tvNavFocus: TextView
     private lateinit var tvNavApps: TextView
     private lateinit var tvNavStats: TextView
+    private lateinit var tvNavHistory: TextView
     private lateinit var tvNavAbout: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Ensure background limit monitoring service is running
         val serviceIntent = Intent(this, FocusService::class.java)
         ContextCompat.startForegroundService(this, serviceIntent)
 
         navTabFocus = findViewById(R.id.nav_tab_focus)
         navTabApps = findViewById(R.id.nav_tab_apps)
         navTabStats = findViewById(R.id.nav_tab_stats)
+        navTabHistory = findViewById(R.id.nav_tab_history)
         navTabAbout = findViewById(R.id.nav_tab_about)
 
         tvNavFocus = findViewById(R.id.tv_nav_focus)
         tvNavApps = findViewById(R.id.tv_nav_apps)
         tvNavStats = findViewById(R.id.tv_nav_stats)
+        tvNavHistory = findViewById(R.id.tv_nav_history)
         tvNavAbout = findViewById(R.id.tv_nav_about)
 
         if (savedInstanceState == null) {
@@ -58,6 +61,11 @@ class MainActivity : AppCompatActivity() {
             highlightTab(navTabStats, tvNavStats)
         }
 
+        navTabHistory.setOnClickListener {
+            replaceFragment(HistoryFragment())
+            highlightTab(navTabHistory, tvNavHistory)
+        }
+
         navTabAbout.setOnClickListener {
             replaceFragment(MoreFragment())
             highlightTab(navTabAbout, tvNavAbout)
@@ -71,8 +79,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun highlightTab(activeLayout: LinearLayout, activeTextView: TextView) {
-        val tabs = listOf(navTabFocus, navTabApps, navTabStats, navTabAbout)
-        val texts = listOf(tvNavFocus, tvNavApps, tvNavStats, tvNavAbout)
+        val tabs = listOf(navTabFocus, navTabApps, navTabStats, navTabHistory, navTabAbout)
+        val texts = listOf(tvNavFocus, tvNavApps, tvNavStats, tvNavHistory, tvNavAbout)
 
         tabs.forEach { it.setBackgroundColor(Color.TRANSPARENT) }
         texts.forEach { it.setTextColor(Color.parseColor("#94A3B8")) }
