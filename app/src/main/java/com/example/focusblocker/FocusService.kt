@@ -16,53 +16,54 @@ import androidx.core.app.NotificationCompat
 class FocusService : Service() {
 
     private var countDownTimer: CountDownTimer? = null
-    private var isRunning = false
-    private var isPaused = false
+    private var isSessionActive = false
     private val handler = Handler(Looper.getMainLooper())
-    private var blockedApps = setOf<String>()
     private lateinit var statsHelper: UsageStatsHelper
 
-    private val appCheckRunnable = object : Runnable {
+    private val monitorRunnable = object : Runnable {
         override fun run() {
-            if (isRunning && !isPaused) {
-                checkForegroundAppAndBlock()
-            }
-            handler.postDelayed(this, 500)
+            checkForegroundAppAndEnforceLimits()
+            handler.postDelayed(this, 1000)
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val durationMinutes = intent?.getIntExtra("DURATION_MINUTES", 25) ?: 25
-        val durationMillis = durationMinutes * 60 * 1000L
-        val targetEndTime = System.currentTimeMillis() + durationMillis
-
-        val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
-        prefs.edit()
-            .putBoolean("is_session_active", true)
-            .putLong("target_end_time", targetEndTime)
-            .apply()
-
+    override fun onCreate() {
+        super.onCreate()
         statsHelper = UsageStatsHelper(this)
-        blockedApps = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
-
         createNotificationChannel()
-        startForeground(1, createNotification("Focus Active", "Enforcing limits..."))
+        startForeground(1, createNotification("Focus Builder Monitoring", "Enforcing app limits and focus sessions..."))
+        handler.post(monitorRunnable)
+    }
 
-        if (prefs.getBoolean("enable_overlay", true)) {
-            startService(Intent(this, OverlayService::class.java))
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val durationMinutes = intent?.getIntExtra("DURATION_MINUTES", 0) ?: 0
+
+        if (durationMinutes > 0) {
+            val durationMillis = durationMinutes * 60 * 1000L
+            val targetEndTime = System.currentTimeMillis() + durationMillis
+
+            val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
+            prefs.edit()
+                .putBoolean("is_session_active", true)
+                .putLong("target_end_time", targetEndTime)
+                .apply()
+
+            isSessionActive = true
+
+            if (prefs.getBoolean("enable_overlay", true)) {
+                startService(Intent(this, OverlayService::class.java))
+            }
+
+            startFocusTimer(durationMillis)
         }
-
-        startFocusTimer(durationMillis)
-        isRunning = true
-        handler.post(appCheckRunnable)
 
         return START_STICKY
     }
 
-    private fun checkForegroundAppAndBlock() {
+    private fun checkForegroundAppAndEnforceLimits() {
         val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager ?: return
-        val time = System.currentTimeMillis()
-        val usageEvents = usageStatsManager.queryEvents(time - 2000, time)
+        val now = System.currentTimeMillis()
+        val usageEvents = usageStatsManager.queryEvents(now - 3000, now)
         val event = UsageEvents.Event()
 
         var currentForegroundApp: String? = null
@@ -73,12 +74,19 @@ class FocusService : Service() {
             }
         }
 
-        if (currentForegroundApp != null) {
+        if (currentForegroundApp != null && currentForegroundApp != packageName) {
             val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
+            val blockedApps = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
             val dailyLimitMinutes = prefs.getInt("limit_$currentForegroundApp", 0)
 
-            var shouldBlock = blockedApps.contains(currentForegroundApp)
+            var shouldBlock = false
 
+            // Check 1: Active Focus Session Block
+            if (isSessionActive && blockedApps.contains(currentForegroundApp)) {
+                shouldBlock = true
+            }
+
+            // Check 2: Daily Limit Check
             if (!shouldBlock && dailyLimitMinutes > 0) {
                 val todayMillis = statsHelper.getTodayUsageMillis(currentForegroundApp)
                 val todayMinutes = (todayMillis / 1000 / 60).toInt()
@@ -93,7 +101,7 @@ class FocusService : Service() {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 startActivity(homeIntent)
-                Toast.makeText(this, "Focus Builder: App limit reached or blocked!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Focus Builder: Limit reached for $currentForegroundApp!", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -103,8 +111,6 @@ class FocusService : Service() {
 
         countDownTimer = object : CountDownTimer(durationMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                if (isPaused) return
-
                 val minutesLeft = millisUntilFinished / 1000 / 60
                 val secondsLeft = (millisUntilFinished / 1000) % 60
                 val timeStr = String.format("%02d:%02d", minutesLeft, secondsLeft)
@@ -115,16 +121,13 @@ class FocusService : Service() {
             }
 
             override fun onFinish() {
-                cleanUpSessionState()
-                stopForeground(true)
-                stopSelf()
+                stopFocusSession()
             }
         }.start()
     }
 
-    private fun cleanUpSessionState() {
-        isRunning = false
-        handler.removeCallbacks(appCheckRunnable)
+    private fun stopFocusSession() {
+        isSessionActive = false
         stopService(Intent(this, OverlayService::class.java))
 
         val prefs = getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
@@ -148,7 +151,7 @@ class FocusService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 "focus_channel",
-                "Focus Builder Sessions",
+                "Focus Builder Protection",
                 NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(NotificationManager::class.java)
@@ -158,7 +161,7 @@ class FocusService : Service() {
 
     override fun onDestroy() {
         countDownTimer?.cancel()
-        cleanUpSessionState()
+        handler.removeCallbacks(monitorRunnable)
         super.onDestroy()
     }
 
