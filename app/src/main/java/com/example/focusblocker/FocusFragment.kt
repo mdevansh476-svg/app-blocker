@@ -26,12 +26,26 @@ class FocusFragment : Fragment() {
     private lateinit var btnMinus5: Button
     private lateinit var btnPlus5: Button
 
+    private lateinit var tvStreakCount: TextView
+    private lateinit var tvBestStreak: TextView
+
     private var customMinutes = 25
 
     private val timerReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val timeRemaining = intent?.getStringExtra("TIME_LEFT") ?: return
-            tvCustomTime.text = timeRemaining
+            if (timeRemaining == "PAUSED") {
+                tvCustomTime.text = "PAUSED"
+                statusDesc.text = "Session paused"
+                tvCircleText.text = "RESUME\nSESSION"
+            } else {
+                tvCustomTime.text = timeRemaining
+                val ctx = context ?: return
+                val prefs = ctx.getSharedPreferences("FocusPrefs", Context.MODE_PRIVATE)
+                val blockedApps = prefs.getStringSet("blocked_apps", emptySet()) ?: emptySet()
+                statusDesc.text = "Session active • ${blockedApps.size} apps locked"
+                tvCircleText.text = "STOP\nSESSION"
+            }
         }
     }
 
@@ -45,6 +59,9 @@ class FocusFragment : Fragment() {
 
         btnMinus5 = view.findViewById(R.id.btn_minus_5)
         btnPlus5 = view.findViewById(R.id.btn_plus_5)
+
+        tvStreakCount = view.findViewById(R.id.tv_streak_count)
+        tvBestStreak = view.findViewById(R.id.tv_best_streak)
 
         btnMinus5.setOnClickListener {
             if (customMinutes > 5) {
@@ -74,7 +91,18 @@ class FocusFragment : Fragment() {
             ctx.registerReceiver(timerReceiver, IntentFilter("FOCUS_TIMER_UPDATE"))
         }
 
+        updateStreakDisplay()
         syncSessionUI()
+    }
+
+    private fun updateStreakDisplay() {
+        val ctx = context ?: return
+        val streakHelper = StreakHelper(ctx)
+        val current = streakHelper.getCurrentStreak()
+        val best = streakHelper.getBestStreak()
+
+        tvStreakCount.text = "$current Day Focus Streak 🔥"
+        tvBestStreak.text = "Best record: $best days"
     }
 
     private fun syncSessionUI() {
@@ -160,6 +188,9 @@ class FocusFragment : Fragment() {
             Toast.makeText(ctx, "Select at least 1 app in '📱 Apps' tab first!", Toast.LENGTH_LONG).show()
             return
         }
+
+        StreakHelper(ctx).recordCompletedSession()
+        updateStreakDisplay()
 
         val serviceIntent = Intent(ctx, FocusService::class.java).apply {
             putExtra("DURATION_MINUTES", customMinutes)
