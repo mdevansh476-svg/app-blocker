@@ -22,14 +22,26 @@ class OverlayService : Service() {
     private lateinit var layoutExpanded: View
     private lateinit var btnPause: Button
     private lateinit var btnMinimize: Button
+    private lateinit var btnClose: Button
 
     private var isPaused = false
 
     private val timerReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val time = intent?.getStringExtra("TIME_LEFT") ?: return
-            tvBubbleTimer.text = time
-            tvExpandedTimer.text = time
+            if (time == "PAUSED") {
+                isPaused = true
+                btnPause.text = "Resume"
+                tvBubbleTimer.text = "PAUSED"
+                tvExpandedTimer.text = "PAUSED"
+            } else {
+                if (isPaused && time != "PAUSED") {
+                    isPaused = false
+                    btnPause.text = "Pause"
+                }
+                tvBubbleTimer.text = time
+                tvExpandedTimer.text = time
+            }
         }
     }
 
@@ -64,19 +76,22 @@ class OverlayService : Service() {
         layoutExpanded = floatingView.findViewById(R.id.layout_expanded)
         btnPause = floatingView.findViewById(R.id.btn_overlay_pause)
         btnMinimize = floatingView.findViewById(R.id.btn_overlay_minimize)
+        btnClose = floatingView.findViewById(R.id.btn_overlay_close)
 
         setupDragAndTouch()
 
         btnPause.setOnClickListener {
-            isPaused = !isPaused
-            btnPause.text = if (isPaused) "Resume" else "Pause"
-            val action = if (isPaused) "PAUSE" else "RESUME"
+            val action = if (isPaused) "RESUME" else "PAUSE"
             sendBroadcast(Intent("FOCUS_SESSION_ACTION").putExtra("ACTION", action))
         }
 
         btnMinimize.setOnClickListener {
             layoutExpanded.visibility = View.GONE
             layoutBubble.visibility = View.VISIBLE
+        }
+
+        btnClose.setOnClickListener {
+            stopSelf()
         }
 
         windowManager.addView(floatingView, layoutParams)
@@ -116,7 +131,6 @@ class OverlayService : Service() {
                         layoutBubble.visibility = View.GONE
                         layoutExpanded.visibility = View.VISIBLE
                     } else {
-                        // Edge Snap Logic
                         val screenWidth = resources.displayMetrics.widthPixels
                         layoutParams.x = if (layoutParams.x < screenWidth / 2) 10 else screenWidth - floatingView.width - 10
                         windowManager.updateViewLayout(floatingView, layoutParams)
