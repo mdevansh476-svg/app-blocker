@@ -4,14 +4,12 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_main">
 
-    <!-- Swappable Middle Content View -->
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/bottom_navigation_bar" />
 
-    <!-- Permanent Fixed Bottom Navigation Bar -->
     <LinearLayout
         android:id="@+id/bottom_navigation_bar"
         android:layout_width="match_parent"
@@ -23,7 +21,6 @@
         android:paddingHorizontal="4dp"
         android:weightSum="4">
 
-        <!-- Tab 1: Focus -->
         <LinearLayout
             android:id="@+id/nav_tab_focus"
             android:layout_width="0dp"
@@ -44,7 +41,6 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Tab 2: Apps -->
         <LinearLayout
             android:id="@+id/nav_tab_apps"
             android:layout_width="0dp"
@@ -64,7 +60,6 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Tab 3: Stats -->
         <LinearLayout
             android:id="@+id/nav_tab_stats"
             android:layout_width="0dp"
@@ -84,7 +79,6 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Tab 4: About -->
         <LinearLayout
             android:id="@+id/nav_tab_about"
             android:layout_width="0dp"
@@ -98,7 +92,7 @@
                 android:id="@+id/tv_nav_about"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ℹ️ About"
+                android:text="⚙️ More"
                 android:textColor="#94A3B8"
                 android:textSize="12sp"
                 android:textStyle="bold" />
